@@ -1,5 +1,7 @@
 import threading
 import time
+import os
+import sys
 from pynput import keyboard as pynput_keyboard
 import pystray
 from PIL import Image, ImageDraw
@@ -9,6 +11,23 @@ from transcriber import transcribe
 from cleaner import clean
 from injector import inject
 from config import AI_CLEANUP
+
+# --- Single instance lock ---
+LOCK_FILE = os.path.join(os.environ.get("TEMP", "."), "wispr-lite.lock")
+
+def acquire_lock():
+    if os.path.exists(LOCK_FILE):
+        print("[main] already running. exiting.")
+        sys.exit(0)
+    with open(LOCK_FILE, "w") as f:
+        f.write(str(os.getpid()))
+
+def release_lock():
+    if os.path.exists(LOCK_FILE):
+        os.remove(LOCK_FILE)
+
+import atexit
+atexit.register(release_lock)
 
 # --- State ---
 recorder = Recorder()
@@ -88,12 +107,17 @@ def on_release(key):
         else:
             print("[main] tap ignored — too short")
 
-# --- Tray setup ---
+def quit_app(icon, item):
+    release_lock()
+    icon.stop()
+    os._exit(0)
+
+# --- tray setup ---
 def run_tray():
     global tray_icon
     menu = pystray.Menu(
         pystray.MenuItem("Wispr Lite", lambda: None, enabled=False),
-        pystray.MenuItem("Quit", lambda icon, item: icon.stop())
+        pystray.MenuItem("Quit", quit_app)
     )
     tray_icon = pystray.Icon(
         "wispr-lite",
@@ -103,8 +127,9 @@ def run_tray():
     )
     tray_icon.run()
 
-# --- Entry point ---
+# --- entry point ---
 if __name__ == "__main__":
+    acquire_lock()
     print("[main] Wispr Lite starting...")
     print("[main] Hold Caps Lock to record. Release to transcribe.")
 
