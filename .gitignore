@@ -1,0 +1,12 @@
+# PyInstaller
+dist/
+build/
+*.spec
+
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Secrets
+config.py
