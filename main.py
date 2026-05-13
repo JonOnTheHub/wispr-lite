@@ -11,9 +11,39 @@ from transcriber import transcribe
 from cleaner import clean
 from injector import inject
 from config import AI_CLEANUP
+import winreg
 
 # --- Single instance lock ---
 LOCK_FILE = os.path.join(os.environ.get("TEMP", "."), "wispr-lite.lock")
+
+REGISTRY_KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
+APP_NAME = "WisprLite"
+
+def set_startup(enable: bool):
+    exe_path = sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__)
+    try:
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, REGISTRY_KEY, 0, winreg.KEY_SET_VALUE)
+        if enable:
+            winreg.SetValueEx(key, APP_NAME, 0, winreg.REG_SZ, f'"{exe_path}"')
+            print("[main] startup enabled")
+        else:
+            try:
+                winreg.DeleteValue(key, APP_NAME)
+                print("[main] startup disabled")
+            except FileNotFoundError:
+                pass
+        winreg.CloseKey(key)
+    except Exception as e:
+        print(f"[main] registry error: {e}")
+
+def is_startup_enabled() -> bool:
+    try:
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, REGISTRY_KEY, 0, winreg.KEY_READ)
+        winreg.QueryValueEx(key, APP_NAME)
+        winreg.CloseKey(key)
+        return True
+    except FileNotFoundError:
+        return False
 
 def acquire_lock():
     if os.path.exists(LOCK_FILE):
@@ -115,15 +145,25 @@ def quit_app(icon, item):
 # --- tray setup ---
 def run_tray():
     global tray_icon
-    menu = pystray.Menu(
-        pystray.MenuItem("Wispr Lite", lambda: None, enabled=False),
-        pystray.MenuItem("Quit", quit_app)
-    )
+
+    def toggle_startup(icon, item):
+        enable = not is_startup_enabled()
+        set_startup(enable)
+        icon.menu = build_menu()
+
+    def build_menu():
+        startup_label = "✓ Launch at startup" if is_startup_enabled() else "Launch at startup"
+        return pystray.Menu(
+            pystray.MenuItem("Wispr Lite", lambda: None, enabled=False),
+            pystray.MenuItem(startup_label, toggle_startup),
+            pystray.MenuItem("Quit", quit_app)
+        )
+
     tray_icon = pystray.Icon(
         "wispr-lite",
         make_icon("#2ecc71"),
         "Wispr Lite — Ready",
-        menu
+        build_menu()
     )
     tray_icon.run()
 

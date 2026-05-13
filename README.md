@@ -71,6 +71,13 @@ After Option B setup, just double-click `start.bat`. No terminal window, no fuss
 | Done                   | Text typed at cursor, tray goes green |
 | Quick tap Caps Lock    | Ignored                               |
 
+## Startup on boot
+
+Right-click the tray icon and click "Launch at startup" to register wispr-lite with Windows. 
+A checkmark confirms it's enabled. From that point, it launches automatically whenever you log in — no manual launch needed.
+
+To disable, click "Launch at startup" again. The checkmark disappears and the registry entry is removed.
+
 ---
 
 ## Config
@@ -122,8 +129,7 @@ Output lands in `dist/wispr-lite.exe`. Your `config.py` (including the API key) 
 ## Known issues
 
 - Caps Lock still toggles while the app is running
-- No GUI — all feedback is the tray icon and terminal logs when running from source
-- Requires internet for every transcription
+- Requires internet for every transcription  
 - Not tested on Python 3.13+
 
 ---
