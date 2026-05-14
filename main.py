@@ -13,6 +13,8 @@ from injector import inject
 from config import AI_CLEANUP
 import winreg
 
+sys.stdout.reconfigure(line_buffering=True)
+
 # --- Single instance lock ---
 LOCK_FILE = os.path.join(os.environ.get("TEMP", "."), "wispr-lite.lock")
 
