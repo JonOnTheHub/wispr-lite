@@ -50,8 +50,19 @@ def is_startup_enabled() -> bool:
 
 def acquire_lock():
     if os.path.exists(LOCK_FILE):
-        print("[main] already running. exiting.")
-        sys.exit(0)
+        try:
+            with open(LOCK_FILE, "r") as f:
+                old_pid = int(f.read().strip())
+            # check if that PID is actually still running
+            import psutil
+            if psutil.pid_exists(old_pid):
+                print("[main] already running. exiting.")
+                sys.exit(0)
+            else:
+                print("[main] stale lock found, removing...")
+                os.remove(LOCK_FILE)
+        except Exception:
+            os.remove(LOCK_FILE)
     with open(LOCK_FILE, "w") as f:
         f.write(str(os.getpid()))
 

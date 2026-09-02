@@ -6,3 +6,4 @@ keyboard
 pynput
 pystray
 Pillow
+psutil

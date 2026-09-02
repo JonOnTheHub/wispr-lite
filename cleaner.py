@@ -87,7 +87,8 @@ def clean(transcript: str) -> str:
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": transcript}
         ],
-        temperature=0.1
+        temperature=0.0,
+        max_tokens=1024,
     )
 
     cleaned = response.choices[0].message.content.strip()
